@@ -57,6 +57,11 @@ cask "noswoosh-pro" do
     Releases here are ad-hoc signed (no Developer ID yet), so the Accessibility grant does
     not survive an upgrade: after each "brew upgrade --cask noswoosh-pro" tick it again.
 
+After "brew upgrade --cask noswoosh-pro" the login daemon is gone: Homebrew's upgrade
+    runs this cask's uninstall hook, which removes the LaunchAgent. Run `noswoosh-pro setup`
+    again to put it back. The Accessibility / Device Control grants do survive upgrades —
+    releases are signed with a stable certificate, unlike the earlier ad-hoc builds.
+
     Don't install this next to the upstream noswoosh cask — both daemons would answer the
     same app activation and double-post the switch.
   EOS
