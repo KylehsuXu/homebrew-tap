@@ -1,6 +1,6 @@
 cask "noswoosh-pro" do
-  version "1.8.0"
-  sha256 "3c9a9c53b5706b3887cc674e24d2555cfe9f8f3cbeeee620dac0642ed841ab51"
+  version "1.8.1"
+  sha256 "34a7e96741fb3a46271166817b572fb55b0874594f228843c5700f86f3c9c39a"
 
   url "https://github.com/KylehsuXu/noswoosh/releases/download/v#{version}/noswoosh-pro-#{version}.app.zip"
   name "noswoosh-pro"
@@ -12,40 +12,14 @@ cask "noswoosh-pro" do
   app "noswoosh-pro.app"
   binary "#{appdir}/noswoosh-pro.app/Contents/MacOS/noswoosh-pro"
 
-  postflight do
-    exe = "#{appdir}/noswoosh-pro.app/Contents/MacOS/noswoosh-pro"
-    system_command exe, args: ["setup"]
-
-    plist = File.expand_path("~/Library/LaunchAgents/xu.max.noswoosh-pro.plist")
-    File.write(plist, <<~XML)
-      <?xml version="1.0" encoding="UTF-8"?>
-      <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-      <plist version="1.0">
-      <dict>
-          <key>Label</key>
-          <string>xu.max.noswoosh-pro</string>
-          <key>ProgramArguments</key>
-          <array>
-              <string>#{exe}</string>
-          </array>
-          <key>RunAtLoad</key>
-          <true/>
-          <key>KeepAlive</key>
-          <true/>
-          <key>ProcessType</key>
-          <string>Interactive</string>
-          <key>LimitLoadToSessionType</key>
-          <string>Aqua</string>
-          <key>StandardErrorPath</key>
-          <string>#{File.expand_path("~/Library/Logs/noswoosh-pro.log")}</string>
-      </dict>
-      </plist>
-    XML
-
-    system_command "/bin/launchctl", args:         ["bootout", "gui/#{Process.uid}/xu.max.noswoosh-pro"],
-                                     must_succeed: false
-    system_command "/bin/launchctl", args:         ["bootstrap", "gui/#{Process.uid}", plist],
-                                     must_succeed: false
+  # Homebrew 7 runs cask install steps inside a sandbox that kills anything touching
+  # WindowServer or cfprefsd: the `setup` call that used to live here died with SIGKILL
+  # (silently, behind must_succeed), leaving the system Ctrl+arrow hotkeys enabled. So the
+  # cask only installs the app; the one-time system work and the login daemon are installed
+  # by `noswoosh-pro setup` — see caveats. Only quarantine removal is safe here.
+  postflight_steps do
+    run "/usr/bin/xattr", args: ["-d", "com.apple.quarantine", "{{appdir}}/noswoosh-pro.app"],
+                            must_succeed: false
   end
 
   uninstall_preflight do
@@ -53,8 +27,8 @@ cask "noswoosh-pro" do
                                      must_succeed: false
     system_command "#{appdir}/noswoosh-pro.app/Contents/MacOS/noswoosh-pro", args:         ["teardown"],
                                                                      must_succeed: false
-    # postflight writes this, so uninstall must remove it: zap only runs with
-    # --zap, and a stale plist points launchd at a binary that no longer exists.
+    # setup writes this, so uninstall must remove it: zap only runs with --zap, and a stale
+    # plist points launchd at a binary that no longer exists.
     FileUtils.rm(File.expand_path("~/Library/LaunchAgents/xu.max.noswoosh-pro.plist"), force: true)
   end
 
@@ -64,21 +38,26 @@ cask "noswoosh-pro" do
   ]
 
   caveats <<~EOS
-    One manual step remains: grant Accessibility permission (macOS prompts on
-    first start), or add it yourself:
+    Finish the install by running this once:
+
+      noswoosh-pro setup
+
+    It disables the system's animated Ctrl+arrow shortcuts and installs + starts the login
+    daemon. (Homebrew sandboxes cask install steps, so the cask cannot do either itself.)
+
+    Then grant Accessibility permission — macOS prompts on first start, or add it yourself:
 
       System Settings > Privacy & Security > Accessibility > "+" and select
       #{appdir}/noswoosh-pro.app
 
-    The daemon picks the grant up on its own within a second. Ctrl+Left /
-    Ctrl+Right then switch spaces instantly, and so does switching to an app
-    that lives on another space (Cmd+Tab, Dock icon, open -b hotkeys).
+    The daemon picks the grant up on its own within a second. Ctrl+Left / Ctrl+Right then
+    switch spaces instantly, and so does switching to an app that lives on another space
+    (Cmd+Tab, Dock icon, open -b hotkeys).
 
-    Releases here are ad-hoc signed (no Developer ID yet), so the Accessibility
-    grant does not survive an upgrade: after each "brew upgrade --cask
-    noswoosh-pro" you have to tick it again.
+    Releases here are ad-hoc signed (no Developer ID yet), so the Accessibility grant does
+    not survive an upgrade: after each "brew upgrade --cask noswoosh-pro" tick it again.
 
-    Don't install this next to the upstream noswoosh cask — both daemons would
-    answer the same app activation and double-post the switch.
+    Don't install this next to the upstream noswoosh cask — both daemons would answer the
+    same app activation and double-post the switch.
   EOS
 end
