@@ -2,10 +2,10 @@ cask "noswoosh-pro" do
   version "1.8.6"
   sha256 "9fffd8d34448ec64c252de65fc63641e91e5731cbc83d63a1a7f87789bf3c246"
 
-  url "https://github.com/KylehsuXu/noswoosh/releases/download/v#{version}/noswoosh-pro-#{version}.app.zip"
+  url "https://github.com/KylehsuXu/noswoosh-pro/releases/download/v#{version}/noswoosh-pro-#{version}.app.zip"
   name "noswoosh-pro"
   desc "Instant space switching with Ctrl+arrow keys and for app switches, minus the swoosh"
-  homepage "https://github.com/KylehsuXu/noswoosh"
+  homepage "https://github.com/KylehsuXu/noswoosh-pro"
 
   depends_on macos: :monterey
 
