@@ -22,14 +22,16 @@ cask "noswoosh-pro" do
                             must_succeed: false
   end
 
-  uninstall_preflight do
-    system_command "/bin/launchctl", args:         ["bootout", "gui/#{Process.uid}/xu.max.noswoosh-pro"],
-                                     must_succeed: false
-    system_command "#{appdir}/noswoosh-pro.app/Contents/MacOS/noswoosh-pro", args:         ["teardown"],
-                                                                     must_succeed: false
-    # setup writes this, so uninstall must remove it: zap only runs with --zap, and a stale
-    # plist points launchd at a binary that no longer exists.
-    FileUtils.rm(File.expand_path("~/Library/LaunchAgents/xu.max.noswoosh-pro.plist"), force: true)
+  # Homebrew 7 wants the *_steps form. `teardown` re-enables the system Ctrl+arrow shortcuts, and
+  # the plist has to go or launchd keeps pointing at a binary that is no longer there — so both
+  # commands are load-bearing, not decoration. The binary path is resolved out here: inside a
+  # *_steps block `self` is Homebrew's InstallSteps::DSL, where `appdir` does not exist (a
+  # {{appdir}} placeholder is only substituted in the install artifacts, not in these steps).
+  uninstall_binary = "#{appdir}/noswoosh-pro.app/Contents/MacOS/noswoosh-pro"
+  uninstall_preflight_steps do
+    run "/bin/launchctl", args: ["bootout", "gui/#{Process.uid}/xu.max.noswoosh-pro"], must_succeed: false
+    run uninstall_binary, args: ["teardown"], must_succeed: false
+    remove "Library/LaunchAgents/xu.max.noswoosh-pro.plist", base: :home
   end
 
   zap trash: [
@@ -54,13 +56,9 @@ cask "noswoosh-pro" do
     switch spaces instantly, and so does switching to an app that lives on another space
     (Cmd+Tab, Dock icon, open -b hotkeys).
 
-    Releases here are ad-hoc signed (no Developer ID yet), so the Accessibility grant does
-    not survive an upgrade: after each "brew upgrade --cask noswoosh-pro" tick it again.
-
-After "brew upgrade --cask noswoosh-pro" the login daemon is gone: Homebrew's upgrade
-    runs this cask's uninstall hook, which removes the LaunchAgent. Run `noswoosh-pro setup`
-    again to put it back. The Accessibility / Device Control grants do survive upgrades —
-    releases are signed with a stable certificate, unlike the earlier ad-hoc builds.
+    Upgrading: "brew upgrade --cask noswoosh-pro" runs this cask's uninstall hook, which removes
+    the login daemon — run `noswoosh-pro setup` again afterwards. The Accessibility / Device
+    Control grants do survive: releases are signed with a stable certificate.
 
     Don't install this next to the upstream noswoosh cask — both daemons would answer the
     same app activation and double-post the switch.
