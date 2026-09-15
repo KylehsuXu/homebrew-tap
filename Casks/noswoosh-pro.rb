@@ -1,6 +1,6 @@
 cask "noswoosh-pro" do
-  version "1.8.3"
-  sha256 "9302be537e7d90c78885414852cdfb703c36bd9cf0901a6c6cfeb0d270414131"
+  version "1.8.4"
+  sha256 "64b3c509ceba70b37b24469a9eb223e92f169dd9482ed33cd252c6aa1f70bc6f"
 
   url "https://github.com/KylehsuXu/noswoosh/releases/download/v#{version}/noswoosh-pro-#{version}.app.zip"
   name "noswoosh-pro"
