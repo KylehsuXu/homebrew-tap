@@ -1,8 +1,13 @@
 # KylehsuXu/homebrew-tap
 
 ```sh
+brew trust --cask KylehsuXu/tap/noswoosh-pro   # Homebrew 7 refuses third-party taps until trusted
 brew install --cask KylehsuXu/tap/noswoosh-pro
+noswoosh-pro setup                             # once: disables the animated Ctrl+arrow
+                                               # shortcuts and starts the login daemon
 ```
+Then grant Accessibility (macOS prompts on first start). Homebrew sandboxes cask install
+steps, so the cask cannot do those two steps itself — hence the explicit `setup`.
 
 `noswoosh-pro` is a fork of [mmathys/noswoosh](https://github.com/mmathys/noswoosh) that
 also makes **switching to an app on another space** (Cmd+Tab, a Dock icon click, any
